@@ -48,8 +48,8 @@ if ($result->num_rows > 0) {
     } else {
         // 사용자가 아예 존재하지 않으므로 새로 추가
         // TODO: INSERT 쿼리의 컬럼들이 실제 DB와 일치하는지 확인해주세요.
-        $stmt_insert = $connection->prepare("INSERT INTO admin_user (admin_uid, email, name, photo, use_yn, confirm_yn, idate, udate) VALUES (?, ?, ?, ?, 'Y', 'N', NOW(), NOW())");
-        $stmt_insert->bind_param("ssss", $uid, $email, $name, $photo);
+        $stmt_insert = $connection->prepare("INSERT INTO admin_user (admin_uid, email, name, photo, use_yn, confirm_yn,creator,changer,idate, udate) VALUES (?, ?, ?, ?, 'Y', 'N', ?, ?, CONVERT_TZ(UTC_TIMESTAMP(),'+00:00','+09:00'), CONVERT_TZ(UTC_TIMESTAMP(),'+00:00','+09:00'))");
+        $stmt_insert->bind_param("ssssss", $uid, $email, $name, $photo, $uid, $uid);
         
         if ($stmt_insert->execute()) {
             echo json_encode(['status' => 'unauthenticated']);
