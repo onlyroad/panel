@@ -5,18 +5,18 @@
 $current_page = basename($_SERVER['PHP_SELF']);
 
 $links = [
-    'index.php',
-    'list_files.php',
-    'manage_attachments.php'
+    'index.php' => '홈',
+    'list_files.php' => '첨부파일관리',
+    'manage_attachments.php' => 'DB파일관리'
 ];
 
 ?>
 <div style="text-align: right; padding: 10px; border-bottom: 1px solid #ccc; margin-bottom: 20px;">
-    <?php foreach ($links as $link): ?>
-        <?php if ($current_page === $link): ?>
-            <span style="margin-left: 15px; font-weight: bold;"><?php echo $link; ?></span>
+    <?php foreach ($links as $url => $title): ?>
+        <?php if ($current_page === $url): ?>
+            <span style="margin-left: 15px; font-weight: bold;"><?php echo $title; ?></span>
         <?php else: ?>
-            <a href="<?php echo $link; ?>" style="margin-left: 15px;"><?php echo $link; ?></a>
+            <a href="<?php echo $url; ?>" style="margin-left: 15px;"><?php echo $title; ?></a>
         <?php endif; ?>
     <?php endforeach; ?>
 
