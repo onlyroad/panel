@@ -125,15 +125,7 @@ function format_bytes($bytes, $precision = 2) {
 </head>
 <body>
 
-<div style="text-align: right; padding: 10px; border-bottom: 1px solid #ccc; margin-bottom: 20px;">
-    <?php if (isset($_SESSION['user_name']) && !empty($_SESSION['user_name'])) : ?>
-        <strong><?php echo htmlspecialchars($_SESSION['user_name']); ?></strong>님, 환영합니다.
-    <?php else: ?>
-        <strong><?php echo htmlspecialchars($_SESSION['user_email']); ?></strong>님, 환영합니다.
-    <?php endif; ?>
-    (UID: <?php echo htmlspecialchars($_SESSION['user_uid']); ?>)
-    <a href="logout.php" style="margin-left: 15px;">로그아웃</a>
-</div>
+<?php include 'navi.php'; ?>
 
 <h1 style="text-align: center;">첨부파일관리 (<?php echo $dir; ?>)</h1>
 
