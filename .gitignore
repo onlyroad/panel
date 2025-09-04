@@ -1,0 +1,16 @@
+# IDE and system files
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# Local configuration files
+.env
+
+# Log files
+*.log
+logs/
+
+# Composer dependencies
+/vendor/
