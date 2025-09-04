@@ -6,8 +6,9 @@ $current_page = basename($_SERVER['PHP_SELF']);
 
 $links = [
     'index.php' => '홈',
-    'list_files.php' => '첨부파일관리',
-    'manage_attachments.php' => 'DB파일관리'
+    'missing_file_list.php' => '미관리 첨부파일',
+    'manage_attachments.php' => 'DB파일관리',
+    'admin_list.php' => '관리자 목록'
 ];
 
 ?>

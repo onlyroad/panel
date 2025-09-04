@@ -84,7 +84,7 @@ session_start();
 
     <div id="user-info">
         <p>환영합니다, <span id="user-email"></span>님!</p>
-        <a href="list_files.php" style="margin-bottom: 10px;">이미지 목록 관리</a>
+        <a href="missing_file_list.php" style="margin-bottom: 10px;">미관리 첨부파일</a>
         <a href="manage_attachments.php" style="margin-bottom: 10px;">첨부파일관리</a>
         <button onclick="logout()">로그아웃</button>
     </div>

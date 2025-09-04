@@ -81,7 +81,7 @@ function format_bytes($bytes, $precision = 2) {
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>첨부파일 관리</title>
+    <title>미관리 첨부파일</title>
     <style>
         body { font-family: sans-serif; }
         ul { list-style-type: none; padding: 0; max-width: 800px; margin: 20px auto; }
@@ -97,7 +97,7 @@ function format_bytes($bytes, $precision = 2) {
 
 <?php include 'navi.php'; ?>
 
-<h1 style="text-align: center;">첨부파일 관리 (<?php echo $dir; ?>)</h1>
+<h1 style="text-align: center;">미관리 첨부파일 (<?php echo $dir; ?>)</h1>
 
 <div style="text-align: center; margin-bottom: 20px;">
     <form action="" method="GET">
@@ -137,29 +137,28 @@ function format_bytes($bytes, $precision = 2) {
 
             if ($is_image || $is_document) {
                 $file_key = substr($display_file, 0, 6);
-                $full_file_path = $full_dir_path . '/' . $original_file;
-                $filesize_formatted = format_bytes(filesize($full_file_path));
-                $file_creation_date = date("Y-m-d H:i:s", filectime($full_file_path));
                 $key_exists = check_key_exists($file_key);
 
-                echo "<li>";
-                if ($is_image) {
-                    $image_path = $dir . "/" . $display_file;
-                    echo "<img src='" . htmlspecialchars($image_path) . "' alt='" . htmlspecialchars($display_file) . "'>";
-                } else {
-                    echo "<img src='https://cdn.icon-icons.com/icons2/1378/PNG/512/documentfile_92740.png' alt='file icon' style='width: 80px; height: 80px; object-fit: contain; margin: 10px;'>";
-                }
-                echo "<span class='filename'>" . htmlspecialchars($display_file) . " (키: " . htmlspecialchars($file_key) . ")<br><small>" . $filesize_formatted . " | " . $file_creation_date . "</small></span>";
-                
-                if ($key_exists) {
-                    echo "<span class='status'>있음</span>";
-                } else {
+                if (!$key_exists) {
+                    $full_file_path = $full_dir_path . '/' . $original_file;
+                    $filesize_formatted = format_bytes(filesize($full_file_path));
+                    $file_creation_date = date("Y-m-d H:i:s", filectime($full_file_path));
+
+                    echo "<li>";
+                    if ($is_image) {
+                        $image_path = $dir . "/" . $display_file;
+                        echo "<img src='" . htmlspecialchars($image_path) . "' alt='" . htmlspecialchars($display_file) . "'>";
+                    } else {
+                        echo "<img src='https://cdn.icon-icons.com/icons2/1378/PNG/512/documentfile_92740.png' alt='file icon' style='width: 80px; height: 80px; object-fit: contain; margin: 10px;'>";
+                    }
+                    echo "<span class='filename'>" . htmlspecialchars($display_file) . " (키: " . htmlspecialchars($file_key) . ")<br><small>" . $filesize_formatted . " | " . $file_creation_date . "</small></span>";
+                    
                     echo "<form method='POST' action='' class='status'>";
                     echo "<input type='hidden' name='delete_file' value='" . htmlspecialchars($original_file) . "'>";
                     echo "<button type='submit' class='delete-btn'>삭제</button>";
                     echo "</form>";
+                    echo "</li>";
                 }
-                echo "</li>";
             }
         }
     } else {
