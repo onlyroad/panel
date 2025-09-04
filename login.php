@@ -57,7 +57,6 @@
                     },
                     signInSuccessUrl: 'index.php',
                     signInOptions: [
-                        firebase.auth.GoogleAuthProvider.PROVIDER_ID,
                         firebase.auth.EmailAuthProvider.PROVIDER_ID
                     ],
                     // 이용 약관 URL
