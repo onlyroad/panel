@@ -11,24 +11,44 @@ if (!isset($_SESSION['user_uid'])) {
 // --- 로직 부분 --- //
 // DB에서 사용 가능한 디렉토리 목록 읽어오기
 $available_dirs = [];
-$query = "SELECT distinct `path` FROM `uploadfile`";
+$query = "SELECT distinct `kind`, `path` FROM `uploadfile` WHERE `kind` IS NOT NULL AND `kind` != '' ORDER BY `kind`";
 $result = mysqli_query($connection, $query);
 if ($result) {
     while ($row = mysqli_fetch_assoc($result)) {
-        if (!empty($row['path'])) {
-            $available_dirs[] = $row['path'];
+        $available_dirs[] = ['kind' => $row['kind'], 'path' => $row['path']];
+    }
+}
+/* 
+NEWSIMG     /images/news                            church_news.publish_yn     parent_table    parent_no 
+NEWSFILE    /data/uploads/news                      church_news.publish_yn     parent_table    parent_no 
+IMG         /images/weekly                          church_weekly(use_yn없음)                   parent_no  
+board_board /www/hk7vvfym2hupesyw/data/uploads/     board(가변적) 
+SWIPERPC    /images/main_swiper                     main_swiper.use_yn,pc_img_path           parent_table    parent_no
+SWIPERMO    /images/main_swiper                     main_swiper.use_yn,mo_img_path           parent_table    parent_no
+CB_FILE     /data/uploads/cb/archive                church_board.publish_yn    parent_table    parent_no
+CB_IMG      /images/cb/archive                      church_board.publish_yn    parent_table    parent_no
+POPUP       /images/main_modalpopup                 main_modalpopup.use_yn     parent_table    parent_no
+
+*/
+// GET 요청에서 kind 파라미터 확인
+$selected_kind = '';
+$dir = ''; // 기본값
+
+if (!empty($available_dirs)) {
+    $selected_kind = $available_dirs[0]['kind'];
+    $dir = $available_dirs[0]['path'];
+}
+
+if (isset($_GET['kind'])) {
+    foreach ($available_dirs as $item) {
+        if ($item['kind'] === $_GET['kind']) {
+            $selected_kind = $item['kind'];
+            $dir = $item['path'];
+            break;
         }
     }
 }
 
-// GET 요청에서 dir 파라미터 확인
-$dir = ''; // 기본값
-if (!empty($available_dirs)) {
-    $dir = $available_dirs[0]; // 첫 번째 디렉토리를 기본값으로 설정
-}
-if (isset($_GET['dir']) && in_array($_GET['dir'], $available_dirs)) {
-    $dir = $_GET['dir'];
-}
 
 // $dir 값에 따라 $full_dir_path 경로 조합
 if (strpos($dir, '/data') === 0) {
@@ -79,7 +99,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && (isset($_POST['delete_file_no']) ||
     }
 
     // 새로고침 시 중복 삭제를 방지하기 위해 리디렉션
-    header("Location: " . $_SERVER['PHP_SELF'] . '?dir=' . urlencode($dir));
+    header("Location: " . $_SERVER['PHP_SELF'] . '?kind=' . urlencode($selected_kind));
     exit;
 }
 
@@ -127,14 +147,14 @@ function format_bytes($bytes, $precision = 2) {
 
 <?php include 'navi.php'; ?>
 
-<h1 style="text-align: center;">첨부파일관리 (<?php echo $dir; ?>)</h1>
+<h1 style="text-align: center;">첨부파일관리 (<?php echo $selected_kind; ?>)</h1>
 
 <div style="text-align: center; margin-bottom: 20px;">
     <form action="" method="GET">
-        <select name="dir" onchange="this.form.submit()">
+        <select name="kind" onchange="this.form.submit()">
             <?php foreach ($available_dirs as $d): ?>
-                <option value="<?php echo htmlspecialchars($d); ?>" <?php if ($d === $dir) echo 'selected'; ?>>
-                    <?php echo htmlspecialchars($d); ?>
+                <option value="<?php echo htmlspecialchars($d['kind']); ?>" <?php if ($d['kind'] === $selected_kind) echo 'selected'; ?>>
+                    <?php echo htmlspecialchars($d['kind']); ?>
                 </option>
             <?php endforeach; ?>
         </select>
@@ -154,9 +174,9 @@ function format_bytes($bytes, $precision = 2) {
     $offset = ($page - 1) * $items_per_page;
 
     // 전체 아이템 개수 계산
-    $count_query = "SELECT COUNT(*) as total FROM `uploadfile` WHERE `path` = ?";
+    $count_query = "SELECT COUNT(*) as total FROM `uploadfile` WHERE `kind` = ?";
     $count_stmt = mysqli_prepare($connection, $count_query);
-    mysqli_stmt_bind_param($count_stmt, "s", $dir);
+    mysqli_stmt_bind_param($count_stmt, "s", $selected_kind);
     mysqli_stmt_execute($count_stmt);
     $count_result = mysqli_stmt_get_result($count_stmt);
     $total_rows = mysqli_fetch_assoc($count_result)['total'];
@@ -166,10 +186,10 @@ function format_bytes($bytes, $precision = 2) {
     // --- 페이징 처리 끝 ---
 
     // 쿼리를 현재 선택된 디렉토리($dir)에 대해서만 실행하도록 수정합니다.
-    $query = "SELECT `file_no`, `kind`, `name`, `type`, `size`, `down_count`, `path`, `fullpath`, `upload_name`,  `use_yn`, `creation_time` FROM `uploadfile` WHERE `path` = ? ORDER BY `file_no` DESC LIMIT ?, ?";
+    $query = "SELECT `file_no`, `kind`, `name`, `type`, `size`, `down_count`, `path`, `fullpath`, `upload_name`,  `use_yn`, `creation_time`, `parent_table`, `parent_no` FROM `uploadfile` WHERE `kind` = ? ORDER BY `file_no` DESC LIMIT ?, ?";
     
     $stmt = mysqli_prepare($connection, $query);
-    mysqli_stmt_bind_param($stmt, "sii", $dir, $offset, $items_per_page);
+    mysqli_stmt_bind_param($stmt, "sii", $selected_kind, $offset, $items_per_page);
     mysqli_stmt_execute($stmt);
     $result = mysqli_stmt_get_result($stmt);
 
@@ -219,7 +239,8 @@ function format_bytes($bytes, $precision = 2) {
             <small>
                 <strong>Size:</strong> <?php echo format_bytes($row['size']); ?> |
                 <strong>Down:</strong> <?php echo $row['down_count']; ?> |
-                <strong>Date:</strong> <?php echo date("Y-m-d", strtotime($row['creation_time'])); ?>
+                <strong>Date:</strong> <?php echo date("Y-m-d", strtotime($row['creation_time'])); ?> |
+                <strong>Parent:</strong> <?php echo htmlspecialchars($row['parent_table'] . ' (' . $row['parent_no'] . ')'); ?>
             </small>
             <?php if (!$file_exists): ?>
                 <br><strong style="color: red;">실제 파일 없음!</strong><br>
@@ -227,12 +248,16 @@ function format_bytes($bytes, $precision = 2) {
             <?php endif; ?>
         </div>
         <div class="status" style="color: <?php echo $status_color; ?>;">
-            <strong></strong>
+            <strong><?php echo $status_text; ?></strong>
         </div>
-        <form action="<?php echo htmlspecialchars($_SERVER['PHP_SELF'] . '?dir=' . urlencode($dir)); ?>" method="POST" onsubmit="return confirm('정말 이 항목을 삭제하시겠습니까? DB 기록과 실제 파일(존재하는 경우)이 모두 삭제됩니다.');">
-            <input type="hidden" name="delete_file_no" value="<?php echo htmlspecialchars($row['file_no']); ?>">
-            <button type="submit" class="delete-btn">삭제</button>
-        </form>
+        <?php if ($row['use_yn'] === 'Y'): ?>
+            <button type="submit" class="delete-btn" disabled>삭제</button>
+        <?php else: ?>
+            <form action="<?php echo htmlspecialchars($_SERVER['PHP_SELF'] . '?kind=' . urlencode($selected_kind)); ?>" method="POST" onsubmit="return confirm('정말 이 항목을 삭제하시겠습니까? DB 기록과 실제 파일(존재하는 경우)이 모두 삭제됩니다.');">
+                <input type="hidden" name="delete_file_no" value="<?php echo htmlspecialchars($row['file_no']); ?>">
+                <button type="submit" class="delete-btn">삭제</button>
+            </form>
+        <?php endif; ?>
     </li>
     <?php
         } // end while
@@ -246,7 +271,7 @@ function format_bytes($bytes, $precision = 2) {
 <div style="text-align: center; margin-top: 20px; font-size: 14px;">
     <?php if ($total_pages > 1): ?>
         <?php if ($page > 1): ?>
-            <a href="?dir=<?php echo urlencode($dir); ?>&page=<?php echo $page - 1; ?>" style="text-decoration: none; padding: 5px 10px; border: 1px solid #ddd; color: #333;">&laquo; 이전</a>
+            <a href="?kind=<?php echo urlencode($selected_kind); ?>&page=<?php echo $page - 1; ?>" style="text-decoration: none; padding: 5px 10px; border: 1px solid #ddd; color: #333;">&laquo; 이전</a>
         <?php endif; ?>
 
         <?php 
@@ -255,7 +280,7 @@ function format_bytes($bytes, $precision = 2) {
         $end_page = min($total_pages, $page + 4);
 
         if ($start_page > 1) {
-            echo '<a href="?dir='.urlencode($dir).'&page=1" style="text-decoration: none; padding: 5px 10px; border: 1px solid #ddd; color: #333;">1</a>';
+            echo '<a href="?kind='.urlencode($selected_kind).'&page=1" style="text-decoration: none; padding: 5px 10px; border: 1px solid #ddd; color: #333;">1</a>';
             if ($start_page > 2) {
                 echo '<span style="padding: 5px;">...</span>';
             }
@@ -263,7 +288,7 @@ function format_bytes($bytes, $precision = 2) {
 
         for ($i = $start_page; $i <= $end_page; $i++): 
         ?>
-            <a href="?dir=<?php echo urlencode($dir); ?>&page=<?php echo $i; ?>" style="text-decoration: none; padding: 5px 10px; border: 1px solid #ddd; color: #333; <?php if ($i == $page) echo 'font-weight: bold; background-color: #f0f0f0;'; ?>">
+            <a href="?kind=<?php echo urlencode($selected_kind); ?>&page=<?php echo $i; ?>" style="text-decoration: none; padding: 5px 10px; border: 1px solid #ddd; color: #333; <?php if ($i == $page) echo 'font-weight: bold; background-color: #f0f0f0;'; ?>">
                 <?php echo $i; ?>
             </a>
         <?php endfor; ?>
@@ -273,12 +298,12 @@ function format_bytes($bytes, $precision = 2) {
             if ($end_page < $total_pages - 1) {
                 echo '<span style="padding: 5px;">...</span>';
             }
-            echo '<a href="?dir='.urlencode($dir).'&page='.$total_pages.'" style="text-decoration: none; padding: 5px 10px; border: 1px solid #ddd; color: #333;">'.$total_pages.'</a>';
+            echo '<a href="?kind='.urlencode($selected_kind).'&page='.$total_pages.'" style="text-decoration: none; padding: 5px 10px; border: 1px solid #ddd; color: #333;">'.$total_pages.'</a>';
         }
         ?>
 
         <?php if ($page < $total_pages): ?>
-            <a href="?dir=<?php echo urlencode($dir); ?>&page=<?php echo $page + 1; ?>" style="text-decoration: none; padding: 5px 10px; border: 1px solid #ddd; color: #333;">다음 &raquo;</a>
+            <a href="?kind=<?php echo urlencode($selected_kind); ?>&page=<?php echo $page + 1; ?>" style="text-decoration: none; padding: 5px 10px; border: 1px solid #ddd; color: #333;">다음 &raquo;</a>
         <?php endif; ?>
     <?php endif; ?>
 </div>
