@@ -17,7 +17,7 @@ if (!isset($data['uid'])) {
 $uid = $data['uid'];
 $email = isset($data['email']) ? $data['email'] : null;
 $name = isset($data['name']) ? $data['name'] : null;
-$photo = isset($data['photo']) ? $data['photo'] : null;
+$photo = isset($data['photo']) ? $data['photo'] : " ";
 
 // 1. 사용자가 승인되었는지 확인 (confirm_yn = 'Y')
 $stmt = $connection->prepare("SELECT * FROM admin_user WHERE admin_uid = ? AND confirm_yn = 'Y'");
