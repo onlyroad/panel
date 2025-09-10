@@ -57,11 +57,12 @@
                     },
                     signInSuccessUrl: 'index.php',
                     signInOptions: [
-                        firebase.auth.EmailAuthProvider.PROVIDER_ID,
-                        disableSignUp: {
-                            status: true  // 회원가입 비활성화
+                        {
+                            provider: firebase.auth.EmailAuthProvider.PROVIDER_ID,
+                            disableSignUp: {
+                                status: true
+                            }
                         }
-
                     ],
                     // 이용 약관 URL
                     tosUrl: '<your-tos-url>',
