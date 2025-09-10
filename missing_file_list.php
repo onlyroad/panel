@@ -119,6 +119,7 @@ function format_bytes($bytes, $precision = 2) {
     <?php
     if (is_dir($full_dir_path)) {
         $files = scandir($full_dir_path);
+        $found_missing_files = false;
         foreach ($files as $file) {
             if ($file === '.' || $file === '..') continue;
 
@@ -140,6 +141,7 @@ function format_bytes($bytes, $precision = 2) {
                 $key_exists = check_key_exists($file_key);
 
                 if (!$key_exists) {
+                    $found_missing_files = true;
                     $full_file_path = $full_dir_path . '/' . $original_file;
                     $filesize_formatted = format_bytes(filesize($full_file_path));
                     $file_creation_date = date("Y-m-d H:i:s", filectime($full_file_path));
@@ -160,6 +162,9 @@ function format_bytes($bytes, $precision = 2) {
                     echo "</li>";
                 }
             }
+        }
+        if (!$found_missing_files) {
+            echo "<li>지정된 경로에 미관리 파일은 없습니다.</li>";
         }
     } else {
         echo "<li>지정된 경로에 디렉토리가 없습니다.</li>";

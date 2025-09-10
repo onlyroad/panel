@@ -219,6 +219,71 @@ function format_bytes($bytes, $precision = 2) {
                 $image_url = $row['path'] . '/' . $row['upload_name'];
             }
 
+            // kind에 따라 부모 테이블의 사용여부 가져오기
+            $parent_status = '부모없음 .'; // 기본값
+            $parent_status_color = '#555'; // 기본값 for 부모없음
+            $parent_table = $row['parent_table'];
+            $parent_no = $row['parent_no'];
+            $kind = $row['kind'];
+
+            
+                $sql = "";
+                $bind_type = "i";
+                $bind_value = $parent_no;
+                $use_yn_col = 'use_yn'; // default column name
+
+                switch ($kind) {
+                    case 'NEWSIMG':
+                    case 'NEWSFILE':
+                        $sql = "SELECT `publish_yn` FROM `church_news` WHERE `news_no` = ?";
+                        $use_yn_col = 'publish_yn';
+                        break;
+                    case 'SWIPERPC':
+                    case 'SWIPERMO':
+                        $sql = "SELECT `use_yn` FROM `main_swiper` WHERE `swiper_no` = ?";
+                        break;
+                    case 'CB_FILE':
+                    case 'CB_IMG':
+                        $sql = "SELECT `publish_yn` FROM `church_board` WHERE `board_no` = ?";
+                        $use_yn_col = 'publish_yn';
+                        break;
+                    case 'POPUP':
+                        $sql = "SELECT `use_yn` FROM `main_modalpopup` WHERE `popup_no` = ?";
+                        break;
+                    case 'IMG' : 
+                        $sql = "SELECT  'Y' as use_yn FROM `church_weekly` WHERE `weekly_no` = ?";
+                        break;
+                    case 'board_board' : 
+                        $sql = "SELECT  `use_yn` FROM `board` WHERE `no` = ?";
+                        break;
+
+                }
+
+                if (!empty($sql)) {
+                    $stmt_use_yn = mysqli_prepare($connection, $sql);
+                    if ($stmt_use_yn) {
+                        mysqli_stmt_bind_param($stmt_use_yn, $bind_type, $bind_value);
+                        mysqli_stmt_execute($stmt_use_yn);
+                        $result_use_yn = mysqli_stmt_get_result($stmt_use_yn);
+                        $row_use_yn = mysqli_fetch_assoc($result_use_yn);
+                        
+                        if ($row_use_yn === null) {
+                            $parent_status = '부모 없음';
+                        } else {
+                            $parent_use_yn = $row_use_yn[$use_yn_col];
+                            if ($parent_use_yn === 'Y') {
+                                $parent_status = '부모 사용';
+                                $parent_status_color = 'blue';
+                            } else {
+                                $parent_status = '부모 미사용';
+                                $parent_status_color = '#888';
+                            }
+                        }
+                        mysqli_stmt_close($stmt_use_yn);
+                    }
+                }
+            
+
             $status_text = $row['use_yn'] === 'Y' ? '사용중' : '미사용';
             $status_color = $row['use_yn'] === 'Y' ? 'blue' : '#888';
     ?>
@@ -249,6 +314,7 @@ function format_bytes($bytes, $precision = 2) {
         </div>
         <div class="status" style="color: <?php echo $status_color; ?>;">
             <strong><?php echo $status_text; ?></strong>
+            <br><small style="color: <?php echo $parent_status_color; ?>;">(<?php echo $parent_status; ?>)</small>
         </div>
         <?php if ($row['use_yn'] === 'Y'): ?>
             <button type="submit" class="delete-btn" disabled>삭제</button>
